@@ -1265,6 +1265,11 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                     s->cur_prompt->to_server = true;
                     s->cur_prompt->from_server = true;
 
+#ifdef PERSOPORT
+					bool isPasswordPrompt = 0;
+					ptrlen tmp;
+#endif
+
                     /*
                      * Get any prompt(s) from the packet.
                      */
@@ -1272,6 +1277,10 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                     for (i = 0; i < s->num_prompts; i++) {
                         ptrlen prompt = get_string(pktin);
                         bool echo = get_bool(pktin);
+
+#ifdef PERSOPORT
+						isPasswordPrompt = isPasswordPrompt || ptrlen_startswith(prompt, PTRLEN_LITERAL("Password"), &tmp);
+#endif
 
                         sb = strbuf_new();
                         if (!prompt.len) {
@@ -1345,7 +1354,7 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                      * user's response(s).
                      */
 #ifdef PERSOPORT
-		if( IsPasswordInConf() ) {
+		if( isPasswordPrompt && IsPasswordInConf() ) {
 		    GetPasswordInConfig(bufpass) ;
 		    while( (bufpass[strlen(bufpass)-1]=='n')&&(bufpass[strlen(bufpass)-2]=='\\') ) { 
 				bufpass[strlen(bufpass)-2]='\0'; 
